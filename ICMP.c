@@ -188,6 +188,31 @@ int main() {
     // Close the raw socket descriptor.
     close(sock);
 
+    void display(void *buf, int bytes)
+    {	int i;
+        struct iphdr *ip = buf;
+        struct icmphdr *icmp = buf+ip->ihl*4;
+
+        printf("----------------\n");
+        for ( i = 0; i < bytes; i++ )
+        {
+            if ( !(i & 15) ) printf("\nX:  ", i);
+            printf("X ", ((unsigned char*)buf)[i]);
+        }
+        printf("\n");
+        printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
+               ip->version, ip->ihl*4, ntohs(ip->tot_len), ip->protocol,
+               ip->ttl, inet_ntoa(ip->saddr));
+        printf("dst=%s\n", inet_ntoa(ip->daddr));
+        if ( icmp->un.echo.id == pid )
+        {
+            printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
+                   icmp->type, icmp->code, ntohs(icmp->checksum),
+                   icmp->un.echo.id, icmp->un.echo.sequence);
+        }
+    }
+
+
     int sd;
     struct sockaddr_in addr;
     unsigned char buf[1024];
