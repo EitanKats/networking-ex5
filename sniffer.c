@@ -37,18 +37,3 @@ int main()
  * Code on Page 213 (Section 12.2.4)
  **********************************************/
 
-/* Ethernet header */
-struct ethheader {
-    u_char  ether_dhost[ETHER_ADDR_LEN]; /* destination host address */
-    u_char  ether_shost[ETHER_ADDR_LEN]; /* source host address */
-    u_short ether_type;                  /* IP? ARP? RARP? etc */
-};
-
-void got_packet(u_char *args, const struct pcap_pkthdr *header,
-                const u_char *packet)
-{
-    struct ethheader *eth = (struct ethheader *)packet;
-    if (ntohs(eth->ether_type) == 0x0800) { ... } // IP packet
-    ...
-}
-

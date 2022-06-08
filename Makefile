@@ -1,13 +1,13 @@
 CC=gcc
-FLAGS=-Wall -g
+FLAGS=-Werror -g
 
-all: icmp
+all: icmp sniffer
 
 icmp:
 	$(CC) $(FLAGS) ICMP.cpp -o icmp
 
 sniffer:
-	$(CC) $(FLAGS) sniffer.cpp -o sniffer
+	$(CC) $(FLAGS) sniffer.c -o sniffer
 
 clean:
-	rm -f icmp
+	rm -f icmp sniffer
