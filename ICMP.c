@@ -18,6 +18,9 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sys/time.h> // gettimeofday()
+#include <fcntl.h>
+#include <resolv.h>
+#include <netdb.h>
 
 // IPv4 header len without options
 #define IP4_HDRLEN 20
@@ -49,6 +52,51 @@ unsigned short calculate_checksum(unsigned short *paddress, int len);
 #define SOURCE_IP "192.168.1.18"
 // i.e the gateway or ping to google.com for their ip-address
 #define DESTINATION_IP "192.168.1.1"
+#define PACKETSIZE    64
+struct packet {
+    struct icmphdr hdr;
+    char msg[PACKETSIZE - sizeof(struct icmphdr)];
+};
+
+int pid = -1;
+struct protoent *proto = NULL;
+
+unsigned short checksum(void *b, int len) {
+    unsigned short *buf = b;
+    unsigned int sum = 0;
+    unsigned short result;
+
+    for (sum = 0; len > 1; len -= 2)
+        sum += *buf++;
+    if (len == 1)
+        sum += (unsigned char) buf;
+    sum = (sum >> 16) + (sum & 0xFFFF);
+    sum += (sum >> 16);
+    result = ~sum;
+    return result;
+}
+
+void display(void *buf, int bytes) {
+    int i;
+    struct iphdr *ip = buf;
+    struct icmphdr *icmp = buf + ip->ihl * 4;
+
+    printf("----------------\n");
+    for (i = 0; i < bytes; i++) {
+        if (!(i & 15)) printf("\nX:  ", i);
+        printf("X ", ((unsigned char *) buf)[i]);
+    }
+    printf("\n");
+    printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
+           ip->version, ip->ihl * 4, ntohs(ip->tot_len), ip->protocol,
+           ip->ttl, inet_ntoa(ip->saddr));
+    printf("dst=%s\n", inet_ntoa(ip->daddr));
+    if (icmp->un.echo.id == pid) {
+        printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
+               icmp->type, icmp->code, ntohs(icmp->checksum),
+               icmp->un.echo.id, icmp->un.echo.sequence);
+    }
+}
 
 int main() {
     struct ip iphdr; // IPv4 header
@@ -188,31 +236,6 @@ int main() {
     // Close the raw socket descriptor.
     close(sock);
 
-    void display(void *buf, int bytes)
-    {	int i;
-        struct iphdr *ip = buf;
-        struct icmphdr *icmp = buf+ip->ihl*4;
-
-        printf("----------------\n");
-        for ( i = 0; i < bytes; i++ )
-        {
-            if ( !(i & 15) ) printf("\nX:  ", i);
-            printf("X ", ((unsigned char*)buf)[i]);
-        }
-        printf("\n");
-        printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
-               ip->version, ip->ihl*4, ntohs(ip->tot_len), ip->protocol,
-               ip->ttl, inet_ntoa(ip->saddr));
-        printf("dst=%s\n", inet_ntoa(ip->daddr));
-        if ( icmp->un.echo.id == pid )
-        {
-            printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
-                   icmp->type, icmp->code, ntohs(icmp->checksum),
-                   icmp->un.echo.id, icmp->un.echo.sequence);
-        }
-    }
-
-
     int sd;
     struct sockaddr_in addr;
     unsigned char buf[1024];
@@ -222,7 +245,7 @@ int main() {
         perror("socket");
         exit(0);
     }
-    while (true) {
+    while (1) {
         int bytes, len = sizeof(addr);
 
         bzero(buf, sizeof(buf));
