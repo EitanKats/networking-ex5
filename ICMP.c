@@ -191,7 +191,7 @@ int main() {
 
     // Create raw socket for IP-RAW (make IP-header by yourself)
     int sock = -1;
-    if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) == -1) {
+    if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1) {
         fprintf(stderr, "socket() failed with error: %d", errno);
         fprintf(stderr, "To create a raw socket, the process needs to be run by Admin/root user.\n\n");
         return -1;
@@ -213,29 +213,18 @@ int main() {
     }
 
     // Close the raw socket descriptor.
-    close(sock);
-
-    int sd;
-    struct sockaddr_in addr;
     unsigned char buf[1024];
+    int bytes, len = sizeof(dest_in);
 
-    sd = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-    if (sd < 0) {
-        perror("socket");
-        exit(0);
+    bzero(buf, sizeof(buf));
+    bytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &dest_in, &len);
+    if (bytes > 0) {
+        display(buf, bytes);
+        return 1;
+    } else {
+        perror("recvfrom");
     }
-    while (1) {
-        int bytes, len = sizeof(addr);
-
-        bzero(buf, sizeof(buf));
-        bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr *) &addr, &len);
-        if (bytes > 0) {
-            display(buf, bytes);
-            return 1;
-        } else {
-            perror("recvfrom");
-        }
-    }
+    close(sock);
 
 
     return 0;
