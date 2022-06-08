@@ -188,6 +188,29 @@ int main() {
     // Close the raw socket descriptor.
     close(sock);
 
+    int sd;
+    struct sockaddr_in addr;
+    unsigned char buf[1024];
+
+    sd = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+    if (sd < 0) {
+        perror("socket");
+        exit(0);
+    }
+    while (true) {
+        int bytes, len = sizeof(addr);
+
+        bzero(buf, sizeof(buf));
+        bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr *) &addr, &len);
+        if (bytes > 0) {
+            display(buf, bytes);
+            return 1;
+        } else {
+            perror("recvfrom");
+        }
+    }
+
+
     return 0;
 }
 
