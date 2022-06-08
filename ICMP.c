@@ -61,36 +61,15 @@ struct packet {
 int pid = -1;
 struct protoent *proto = NULL;
 
-unsigned short checksum(void *b, int len) {
-    unsigned short *buf = b;
-    unsigned int sum = 0;
-    unsigned short result;
-
-    for (sum = 0; len > 1; len -= 2)
-        sum += *buf++;
-    if (len == 1)
-        sum += (unsigned char) buf;
-    sum = (sum >> 16) + (sum & 0xFFFF);
-    sum += (sum >> 16);
-    result = ~sum;
-    return result;
-}
-
 void display(void *buf, int bytes) {
     int i;
     struct iphdr *ip = buf;
     struct icmphdr *icmp = buf + ip->ihl * 4;
 
     printf("----------------\n");
-    for (i = 0; i < bytes; i++) {
-        if (!(i & 15)) printf("\nX:  ", i);
-        printf("X ", ((unsigned char *) buf)[i]);
-    }
     printf("\n");
-    printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
-           ip->version, ip->ihl * 4, ntohs(ip->tot_len), ip->protocol,
-           ip->ttl, inet_ntoa(ip->saddr));
-    printf("dst=%s\n", inet_ntoa(ip->daddr));
+    printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d ",
+           ip->version, ip->ihl * 4, ntohs(ip->tot_len), ip->protocol, ip->ttl);
     if (icmp->un.echo.id == pid) {
         printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
                icmp->type, icmp->code, ntohs(icmp->checksum),
