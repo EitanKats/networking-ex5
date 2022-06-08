@@ -7,7 +7,7 @@ icmp:
 	$(CC) $(FLAGS) ICMP.cpp -o icmp
 
 sniffer:
-	$(CC) $(FLAGS) sniffer.c -o sniffer
+	$(CC) $(FLAGS) sniffer.c -lpcap -o sniffer
 
 clean:
 	rm -f icmp sniffer
