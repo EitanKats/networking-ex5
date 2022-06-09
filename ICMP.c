@@ -31,7 +31,7 @@
 // Checksum algo
 unsigned short calculate_checksum(unsigned short *paddress, int len);
 
-// 1. Change SOURCE_IP and DESTINATION_IP to the relevant
+// 1. Change SOURCE_IP and DESTINATION_IP to the relevant _2QXDIKDnWcIGaod9GQqQjW4jgOEVup2ZvrLr
 //     for your computer
 // 2. Compile it using MSVC compiler or g++
 // 3. Run it from the account with administrative permissions,
