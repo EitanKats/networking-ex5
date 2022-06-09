@@ -27,21 +27,8 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
         inet_ntop(AF_INET, &(ip->daddr), str, INET_ADDRSTRLEN);
         printf("         To: %s\n", str);
 
-        /* determine protocol */
-        switch (ip->protocol) {
-            case IPPROTO_TCP:
-                printf("   Protocol: TCP\n");
-                return;
-            case IPPROTO_UDP:
-                printf("   Protocol: UDP\n");
-                return;
-            case IPPROTO_ICMP:
-                printf("   Protocol: ICMP\n");
-                return;
-            default:
-                printf("   Protocol: others\n");
-                return;
-        }
+        struct icmphdr *icmp_hdr = (struct icmphdr *) ((char *) ip + (4 * ip->ihl));
+        printf("ICMP msgtype=%d, code=%d", icmp_hdr->type, icmp_hdr->code);
     }
 }
 
