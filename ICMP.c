@@ -76,6 +76,18 @@ int main() {
 
     int datalen = strlen(data) + 1;
 
+    // Source IP
+    if (inet_pton(AF_INET, SOURCE_IP, &(iphdr.ip_src)) <= 0) {
+        fprintf(stderr, "inet_pton() failed for source-ip with error: %d", errno);
+        return -1;
+    }
+
+    // Destination IPv
+    if (inet_pton(AF_INET, DESTINATION_IP, &(iphdr.ip_dst)) <= 0) {
+        fprintf(stderr, "inet_pton() failed for destination-ip with error: %d", errno);
+        return -1;
+    }
+
     //===================
     // ICMP header
     //===================
