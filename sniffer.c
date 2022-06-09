@@ -5,21 +5,20 @@
 #include <stdio.h>
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
-                const u_char *packet)
-{
-    printf("Got a packet\n");
+                const u_char *packet) {
+
+    printf("Got a packet\n %s", packet);
 }
 
-int main()
-{
+int main() {
     pcap_t *handle;
     char errbuf[PCAP_ERRBUF_SIZE];
     struct bpf_program fp;
     char filter_exp[] = "ip proto icmp";
-    bpf_u_int32 net;
+    bpf_u_int32 net = 0;
 
     // Step 1: Open live pcap session on NIC with name eth3
-    handle = pcap_open_live("eth3", BUFSIZ, 1, 1000, errbuf);
+    handle = pcap_open_live("enp0s3", BUFSIZ, 1, 1000, errbuf);
 
     // Step 2: Compile filter_exp into BPF psuedo-code
     pcap_compile(handle, &fp, filter_exp, 0, net);
