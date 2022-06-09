@@ -3,58 +3,64 @@
 //
 #include <pcap.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netinet/if_ether.h>
+#include <sys/socket.h>
+#include <linux/if_packet.h>
 #include <net/ethernet.h>
-#include <netinet/ether.h>
-
-u_int16_t handle_ethernet
-        (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*
-        packet);
-
-u_int16_t handle_ethernet
-        (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*
-        packet)
-{
-    struct ether_header *eptr;  /* net/ethernet.h */
-
-    /* lets start with the ether header... */
-    eptr = (struct ether_header *) packet;
-
-    fprintf(stdout,"ethernet header source: %s"
-            ,ether_ntoa((const struct ether_addr *)&eptr->ether_shost));
-    fprintf(stdout," destination: %s "
-            ,ether_ntoa((const struct ether_addr *)&eptr->ether_dhost));
-
-    /* check to see if we have an ip packet */
-    if (ntohs (eptr->ether_type) == ETHERTYPE_IP)
-    {
-        fprintf(stdout,"(IP)");
-    }else  if (ntohs (eptr->ether_type) == ETHERTYPE_ARP)
-    {
-        fprintf(stdout,"(ARP)");
-    }else  if (ntohs (eptr->ether_type) == ETHERTYPE_REVARP)
-    {
-        fprintf(stdout,"(RARP)");
-    }else {
-        fprintf(stdout,"(?)");
-        exit(1);
-    }
-    fprintf(stdout,"\n");
-
-    return eptr->ether_type;
-}
+#include <stdio.h>
 
 
+struct ethheader {
+    u_char  ether_dhost[ETHER_ADDR_LEN]; /* destination host address */
+    u_char  ether_shost[ETHER_ADDR_LEN]; /* source host address */
+    u_short ether_type;                  /* IP? ARP? RARP? etc */
+};
+
+
+/* IP Header */
+struct ipheader {
+    unsigned char      iph_ihl:4, //IP header length
+    iph_ver:4; //IP version
+    unsigned char      iph_tos; //Type of service
+    unsigned short int iph_len; //IP Packet length (data + header)
+    unsigned short int iph_ident; //Identification
+    unsigned short int iph_flag:3, //Fragmentation flags
+    iph_offset:13; //Flags offset
+    unsigned char      iph_ttl; //Time to Live
+    unsigned char      iph_protocol; //Protocol type
+    unsigned short int iph_chksum; //IP datagram checksum
+    struct  in_addr    iph_sourceip; //Source IP address
+    struct  in_addr    iph_destip;   //Destination IP address
+};
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
-                const u_char *packet) {
-    u_int16_t type = handle_ethernet(args,header,packet);
-    printf("Got a packet\n %s", packet);
+                const u_char *packet)
+{
+    struct ethheader *eth = (struct ethheader *)packet;
+
+    if (ntohs(eth->ether_type) == 0x0800) { // 0x0800 is IP type
+        struct ipheader * ip = (struct ipheader *)
+                (packet + sizeof(struct ethheader));
+
+        printf("       From: %s\n", inet_ntoa(ip->iph_sourceip));
+        printf("         To: %s\n", inet_ntoa(ip->iph_destip));
+
+        /* determine protocol */
+        switch(ip->iph_protocol) {
+            case IPPROTO_TCP:
+                printf("   Protocol: TCP\n");
+                return;
+            case IPPROTO_UDP:
+                printf("   Protocol: UDP\n");
+                return;
+            case IPPROTO_ICMP:
+                printf("   Protocol: ICMP\n");
+                return;
+            default:
+                printf("   Protocol: others\n");
+                return;
+        }
+    }
 }
 
 int main() {
