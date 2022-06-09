@@ -5,6 +5,7 @@
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
 
 struct ethheader {
     u_char ether_dhost[ETHER_ADDR_LEN]; /* destination host address */
@@ -14,16 +15,17 @@ struct ethheader {
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
     struct ethheader *eth = (struct ethheader *) packet;
+    struct ip iphdr; // IPv4 header
+    struct icmp icmphdr; // ICMP-header
 
     if (ntohs(eth->ether_type) == 0x0800) { // 0x0800 is IP type
-        struct iphdr *ip = (struct iphdr *)
-                (packet + sizeof(struct ethheader));
+        struct iphdr *ip = (struct iphdr *) (packet + sizeof(struct ethheader));
 
-        printf("       From: %s\n", inet_ntoa(ip->src));
-        printf("         To: %s\n", inet_ntoa(ip->dest));
+        printf("       From: %u\n",  ip->saddr);
+        printf("         To: %u\n", ip->daddr);
 
         /* determine protocol */
-        switch (ip->proto) {
+        switch (ip->protocol) {
             case IPPROTO_TCP:
                 printf("   Protocol: TCP\n");
                 return;
