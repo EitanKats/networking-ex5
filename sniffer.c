@@ -53,7 +53,7 @@ u_int16_t handle_ethernet
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
                 const u_char *packet) {
-    u_int16_t type = handle_ethernet(args,pkthdr,packet);
+    u_int16_t type = handle_ethernet(args,header,packet);
     printf("Got a packet\n %s", packet);
 }
 
