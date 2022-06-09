@@ -23,12 +23,12 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
         struct iphdr *ip = (struct iphdr *) (packet + sizeof(struct ethheader));
 
         inet_ntop(AF_INET, &(ip->saddr), str, INET_ADDRSTRLEN);
-        printf("       From: %s\n", str);
+        printf("From: %s\n", str);
         inet_ntop(AF_INET, &(ip->daddr), str, INET_ADDRSTRLEN);
-        printf("         To: %s\n", str);
+        printf("To: %s\n", str);
 
         struct icmphdr *icmp_hdr = (struct icmphdr *) ((char *) ip + (4 * ip->ihl));
-        printf("ICMP msgtype=%d, code=%d", icmp_hdr->type, icmp_hdr->code);
+        printf("ICMP msgtype=%d, code=%d\n", icmp_hdr->type, icmp_hdr->code);
     }
 }
 
