@@ -139,7 +139,7 @@ int main() {
 
     struct timeval start;
     struct timeval end;
-    long double seconds;
+    long double micro_seconds;
 
     gettimeofday(&start, NULL);
     // Send the packet using sendto() for sending datagrams.
@@ -156,9 +156,9 @@ int main() {
     bytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &dest_in, &len);
     if (bytes > 0) {
         gettimeofday(&end, NULL);
-        seconds = (end.tv_sec - start.tv_sec) +
-                  (long double) (end.tv_usec - start.tv_usec) / 1000000.0;
-        printf("Took %Lf seconds\n", seconds);
+        micro_seconds = (long double) (end.tv_usec - start.tv_usec);
+
+        printf("Took %Lf Micro seconds , and %Lf Milli seconds\n", micro_seconds, micro_seconds/1000.0);
         display(buf, bytes);
         return 1;
     } else {
