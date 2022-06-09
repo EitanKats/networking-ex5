@@ -49,14 +49,9 @@ unsigned short calculate_checksum(unsigned short *paddress, int len);
 //  still be sent, but do not expect to see ICMP_ECHO_REPLY in most such cases
 //  since anti-spoofing is wide-spread.
 
-#define SOURCE_IP "192.168.1.18"
+#define SOURCE_IP "0.0.0.0"
 // i.e the gateway or ping to google.com for their ip-address
-#define DESTINATION_IP "192.168.1.1"
-#define PACKETSIZE    64
-struct packet {
-    struct icmphdr hdr;
-    char msg[PACKETSIZE - sizeof(struct icmphdr)];
-};
+#define DESTINATION_IP "8.8.8.8"
 
 int pid = -1;
 struct protoent *proto = NULL;
@@ -98,7 +93,7 @@ int main() {
     iphdr.ip_tos = 0;
 
     // Total length of datagram (16 bits): IP header + ICMP header + ICMP data
-    iphdr.ip_len = htons(IP4_HDRLEN + ICMP_HDRLEN + datalen);
+    iphdr.ip_len = htons(ICMP_HDRLEN + datalen);
 
     // ID sequence number (16 bits): not in use since we do not allow fragmentation
     iphdr.ip_id = 0;
@@ -140,11 +135,6 @@ int main() {
         return -1;
     }
 
-    // IPv4 header checksum (16 bits): set to 0 prior to calculating in order not to include itself.
-    iphdr.ip_sum = 0;
-    iphdr.ip_sum = calculate_checksum((unsigned short *) &iphdr, IP4_HDRLEN);
-
-
     //===================
     // ICMP header
     //===================
@@ -169,18 +159,15 @@ int main() {
     // Combine the packet 
     char packet[IP_MAXPACKET];
 
-    // First, IP header.
-    memcpy(packet, &iphdr, IP4_HDRLEN);
-
     // Next, ICMP header
-    memcpy((packet + IP4_HDRLEN), &icmphdr, ICMP_HDRLEN);
+    memcpy((packet), &icmphdr, ICMP_HDRLEN);
 
     // After ICMP header, add the ICMP data.
-    memcpy(packet + IP4_HDRLEN + ICMP_HDRLEN, data, datalen);
+    memcpy(packet + ICMP_HDRLEN, data, datalen);
 
     // Calculate the ICMP header checksum
-    icmphdr.icmp_cksum = calculate_checksum((unsigned short *) (packet + IP4_HDRLEN), ICMP_HDRLEN + datalen);
-    memcpy((packet + IP4_HDRLEN), &icmphdr, ICMP_HDRLEN);
+    icmphdr.icmp_cksum = calculate_checksum((unsigned short *) (packet), ICMP_HDRLEN + datalen);
+    memcpy((packet), &icmphdr, ICMP_HDRLEN);
 
     struct sockaddr_in dest_in;
     memset(&dest_in, 0, sizeof(struct sockaddr_in));
@@ -197,17 +184,8 @@ int main() {
         return -1;
     }
 
-    // This socket option IP_HDRINCL says that we are building IPv4 header by ourselves, and
-    // the networking in kernel is in charge only for Ethernet header.
-    const int flagOne = 1;
-    if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, &flagOne, sizeof(flagOne)) == -1) {
-        fprintf(stderr, "setsockopt() failed with error: %d", errno);
-        return -1;
-    }
-
     // Send the packet using sendto() for sending datagrams.
-    if (sendto(sock, packet, IP4_HDRLEN + ICMP_HDRLEN + datalen, 0, (struct sockaddr *) &dest_in, sizeof(dest_in)) ==
-        -1) {
+    if (sendto(sock, packet, ICMP_HDRLEN + datalen, 0, (struct sockaddr *) &dest_in, sizeof(dest_in)) == -1) {
         fprintf(stderr, "sendto() failed with error: %d", errno);
         return -1;
     }
@@ -225,8 +203,6 @@ int main() {
         perror("recvfrom");
     }
     close(sock);
-
-
     return 0;
 }
 
