@@ -17,12 +17,15 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
     struct ethheader *eth = (struct ethheader *) packet;
     struct ip iphdr; // IPv4 header
     struct icmp icmphdr; // ICMP-header
+    char str[INET_ADDRSTRLEN];
 
     if (ntohs(eth->ether_type) == 0x0800) { // 0x0800 is IP type
         struct iphdr *ip = (struct iphdr *) (packet + sizeof(struct ethheader));
 
-        printf("       From: %u\n",  ip->saddr);
-        printf("         To: %u\n", ip->daddr);
+        inet_ntop(AF_INET, &(ip->saddr), str, INET_ADDRSTRLEN);
+        printf("       From: %s\n", str);
+        inet_ntop(AF_INET, &(ip->daddr), str, INET_ADDRSTRLEN);
+        printf("         To: %s\n", str);
 
         /* determine protocol */
         switch (ip->protocol) {
