@@ -62,14 +62,11 @@ void display(void *buf, int bytes) {
     struct icmphdr *icmp = buf + ip->ihl * 4;
 
     printf("----------------\n");
-    printf("\n");
-    printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d ",
+    printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d\n",
            ip->version, ip->ihl * 4, ntohs(ip->tot_len), ip->protocol, ip->ttl);
-    if (icmp->un.echo.id == pid) {
-        printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
-               icmp->type, icmp->code, ntohs(icmp->checksum),
-               icmp->un.echo.id, icmp->un.echo.sequence);
-    }
+    printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
+           icmp->type, icmp->code, ntohs(icmp->checksum),
+           icmp->un.echo.id, icmp->un.echo.sequence);
 }
 
 int main() {
@@ -78,62 +75,6 @@ int main() {
     char data[IP_MAXPACKET] = "This is the ping.\n";
 
     int datalen = strlen(data) + 1;
-
-    //==================
-    // IP header
-    //==================
-
-    // IP protocol version (4 bits)
-    iphdr.ip_v = 4;
-
-    // IP header length (4 bits): Number of 32-bit words in header = 5
-    iphdr.ip_hl = IP4_HDRLEN / 4; // not the most correct
-
-    // Type of service (8 bits) - not using, zero it.
-    iphdr.ip_tos = 0;
-
-    // Total length of datagram (16 bits): IP header + ICMP header + ICMP data
-    iphdr.ip_len = htons(ICMP_HDRLEN + datalen);
-
-    // ID sequence number (16 bits): not in use since we do not allow fragmentation
-    iphdr.ip_id = 0;
-
-    // Fragmentation bits - we are sending short packets below MTU-size and without 
-    // fragmentation
-    int ip_flags[4];
-
-    // Reserved bit
-    ip_flags[0] = 0;
-
-    // "Do not fragment" bit
-    ip_flags[1] = 0;
-
-    // "More fragments" bit
-    ip_flags[2] = 0;
-
-    // Fragmentation offset (13 bits)
-    ip_flags[3] = 0;
-
-    iphdr.ip_off = htons((ip_flags[0] << 15) + (ip_flags[1] << 14)
-                         + (ip_flags[2] << 13) + ip_flags[3]);
-
-    // TTL (8 bits): 128 - you can play with it: set to some reasonable number
-    iphdr.ip_ttl = 128;
-
-    // Upper protocol (8 bits): ICMP is protocol number 1
-    iphdr.ip_p = IPPROTO_ICMP;
-
-    // Source IP
-    if (inet_pton(AF_INET, SOURCE_IP, &(iphdr.ip_src)) <= 0) {
-        fprintf(stderr, "inet_pton() failed for source-ip with error: %d", errno);
-        return -1;
-    }
-
-    // Destination IPv
-    if (inet_pton(AF_INET, DESTINATION_IP, &(iphdr.ip_dst)) <= 0) {
-        fprintf(stderr, "inet_pton() failed for destination-ip with error: %d", errno);
-        return -1;
-    }
 
     //===================
     // ICMP header
@@ -147,8 +88,8 @@ int main() {
 
     // Identifier (16 bits): some number to trace the response.
     // It will be copied to the response packet and used to map response to the request sent earlier.
-    // Thus, it serves as a Transaction-ID when we need to make "ping"
-    icmphdr.icmp_id = 18; // hai
+    // It serves as a Transaction-ID when we need to make "ping"
+    icmphdr.icmp_id = 18;
 
     // Sequence Number (16 bits): starts at 0
     icmphdr.icmp_seq = 0;
@@ -184,6 +125,11 @@ int main() {
         return -1;
     }
 
+    struct timeval start;
+    struct timeval end;
+    long double seconds;
+
+    gettimeofday(&start, NULL);
     // Send the packet using sendto() for sending datagrams.
     if (sendto(sock, packet, ICMP_HDRLEN + datalen, 0, (struct sockaddr *) &dest_in, sizeof(dest_in)) == -1) {
         fprintf(stderr, "sendto() failed with error: %d", errno);
@@ -197,6 +143,10 @@ int main() {
     bzero(buf, sizeof(buf));
     bytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &dest_in, &len);
     if (bytes > 0) {
+        gettimeofday(&end, NULL);
+        seconds = (end.tv_sec - start.tv_sec) +
+                  (long double) (end.tv_usec - start.tv_usec) / 1000000.0;
+        printf("Took %Lf seconds\n", seconds);
         display(buf, bytes);
         return 1;
     } else {
