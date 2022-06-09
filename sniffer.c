@@ -4,9 +4,48 @@
 #include <pcap.h>
 #include <stdio.h>
 
+u_int16_t handle_ethernet
+        (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*
+        packet);
+
+u_int16_t handle_ethernet
+        (u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*
+        packet)
+{
+    struct ether_header *eptr;  /* net/ethernet.h */
+
+    /* lets start with the ether header... */
+    eptr = (struct ether_header *) packet;
+
+    fprintf(stdout,"ethernet header source: %s"
+            ,ether_ntoa((const struct ether_addr *)&eptr->ether_shost));
+    fprintf(stdout," destination: %s "
+            ,ether_ntoa((const struct ether_addr *)&eptr->ether_dhost));
+
+    /* check to see if we have an ip packet */
+    if (ntohs (eptr->ether_type) == ETHERTYPE_IP)
+    {
+        fprintf(stdout,"(IP)");
+    }else  if (ntohs (eptr->ether_type) == ETHERTYPE_ARP)
+    {
+        fprintf(stdout,"(ARP)");
+    }else  if (ntohs (eptr->ether_type) == ETHERTYPE_REVARP)
+    {
+        fprintf(stdout,"(RARP)");
+    }else {
+        fprintf(stdout,"(?)");
+        exit(1);
+    }
+    fprintf(stdout,"\n");
+
+    return eptr->ether_type;
+}
+
+
+
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
                 const u_char *packet) {
-
+    u_int16_t type = handle_ethernet(args,pkthdr,packet);
     printf("Got a packet\n %s", packet);
 }
 
