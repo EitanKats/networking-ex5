@@ -31,7 +31,7 @@
 // Checksum algo
 unsigned short calculate_checksum(unsigned short *paddress, int len);
 
-// 1. Change SOURCE_IP and DESTINATION_IP to the relevant _2QXDIKDnWcIGaod9GQqQjW4jgOEVup2ZvrLr
+// 1. Change SOURCE_IP and DESTINATION_IP to the relevant
 //     for your computer
 // 2. Compile it using MSVC compiler or g++
 // 3. Run it from the account with administrative permissions,
@@ -126,10 +126,10 @@ int main() {
     memset(&dest_in, 0, sizeof(struct sockaddr_in));
     dest_in.sin_family = AF_INET;
 
-    // The port is irrelant for Networking and therefore was zeroed.
+    // The port is irrelevant for Networking and therefore was zeroed.
     dest_in.sin_addr.s_addr = iphdr.ip_dst.s_addr;
 
-    // Create raw socket for IP-RAW (make IP-header by yourself)
+    // Create raw socket
     int sock = -1;
     if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1) {
         fprintf(stderr, "socket() failed with error: %d", errno);
