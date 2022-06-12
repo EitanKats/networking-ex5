@@ -21,14 +21,14 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 
     if (ntohs(eth->ether_type) == 0x0800) { // 0x0800 is IP type
         struct iphdr *ip = (struct iphdr *) (packet + sizeof(struct ethheader));
-
-        inet_ntop(AF_INET, &(ip->saddr), str, INET_ADDRSTRLEN);
-        printf("From: %s\n", str);
-        inet_ntop(AF_INET, &(ip->daddr), str, INET_ADDRSTRLEN);
-        printf("To: %s\n", str);
-
         struct icmphdr *icmp_hdr = (struct icmphdr *) ((char *) ip + (4 * ip->ihl));
-        printf("ICMP msgtype=%d, code=%d\n", icmp_hdr->type, icmp_hdr->code);
+        if (ip->protocol == IPPROTO_ICMP) {
+            inet_ntop(AF_INET, &(ip->saddr), str, INET_ADDRSTRLEN);
+            printf("From: %s\n", str);
+            inet_ntop(AF_INET, &(ip->daddr), str, INET_ADDRSTRLEN);
+            printf("To: %s\n", str);
+            printf("ICMP msgtype=%d, code=%d\n", icmp_hdr->type, icmp_hdr->code);
+        }
     }
 }
 
